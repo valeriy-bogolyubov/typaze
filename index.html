@@ -1,0 +1,11 @@
+<!doctype html>
+<html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>typaze</title><link rel="icon" href="./assets/favicon.ico"><link rel="stylesheet" href="./app/styles.css"></head>
+<body><header class="app-header"><a href="#" class="wordmark">typaze</a></header>
+<main class="workspace"><h1>Практика печати</h1>
+<div class="selectors"><label>Язык <select id="practice-language"><option value="ru">Русский</option><option value="en">English</option></select></label>
+<label>Время <select id="practice-duration"><option value="30">30 с</option><option value="60">60 с</option></select></label></div>
+<p id="clock" role="status"></p><div id="reference" class="text-window"></div>
+<label for="typing-input">Введите текст</label><textarea id="typing-input" spellcheck="false" autocomplete="off"></textarea>
+<p id="result" role="status"></p><button id="restart" type="button">Новый тест</button></main>
+<script type="module" src="./app/main.js"></script></body></html>
