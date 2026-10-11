@@ -75,6 +75,14 @@ export class Aligner {
             if (p < op) op = p;
           }
         };
+        if (
+          i > 1 &&
+          j > 1 &&
+          next[i - 1] === ref[j - 2] &&
+          next[i - 2] === ref[j - 1] &&
+          ref[j - 1] !== ref[j - 2]
+        )
+          choose(prev2.d[j - 2] + 2, prev2.o[j - 2] + 1, prev2.c[j - 2], TRANSPOSE);
         choose(row.d[j - 1] + 1, row.o[j - 1] + 1, row.c[j - 1], DELETE);
         choose(prev.d[j] + 1, prev.o[j] + 1, prev.c[j], INSERT);
         row.d[j] = bd;
