@@ -1,6 +1,8 @@
 export { MIN_PRACTICE_EXPOSURES, MIN_CONTROL_EXPOSURES } from './content.js';
 export const VERSION = 'typaze-edit-v1';
-export const graphemes = (text) => Array.from(text.normalize('NFC'));
+const segmenter = new Intl.Segmenter('und', { granularity: 'grapheme' });
+export const graphemes = (text) =>
+  Array.from(segmenter.segment(text.normalize('NFC')), (x) => x.segment);
 const MATCH = 1,
   TRANSPOSE = 2,
   SUBSTITUTE = 3,
