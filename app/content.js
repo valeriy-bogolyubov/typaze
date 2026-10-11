@@ -59,21 +59,130 @@ const shuffle = (list) => {
   }
   return a;
 };
+// Тексты для отработки сочетаний.
+const extra = {
+  ru: [
+    'Староста поставил стол у стены, достал список и стал встречать гостей.',
+    'Мастер быстро поставил стекло на место и оставил инструменты на столе.',
+    'На станции стоял состав, а у стойки пассажиры спокойно обсуждали новости.',
+    'Простая история о путешествии стала основой для интересного рассказа.',
+    'После встречи гости остались у стола, чтобы составить список новых идей.',
+    'Сестра принесла старую пластинку, поставила её и стала слушать знакомую песню.',
+    'Студенты вместе составили план выставки и отправились за материалами.',
+    'Листья шуршали под ногами, пока мы шли по старой тропе к мосту.',
+    'Около окна Анна написала название нового романа и начала читать.',
+    'На набережной нас ждали знакомые, а над рекой медленно поднимался туман.',
+    'Нина нашла на полке книгу, открыла нужную страницу и сделала заметку.',
+    'Наш новый сосед рассказал нам о небольшом саде на окраине города.',
+  ],
+  en: [
+    'The three brothers thought the path through the trees was the shortest way home.',
+    'They gathered their things together and thanked the host for the thoughtful gift.',
+    'The weather was warm, though the wind from the north stirred the thin branches.',
+    'At the theatre, the author thanked the actors and the people behind the scenes.',
+    'The mother folded the clothes while the children gathered their books for school.',
+    'With the map on the table, they thought about the route through the hills.',
+    'The fourth visitor brought the photographs that showed the old bridge in winter.',
+    'They left the busy street and followed the quiet path beside the river.',
+    'Anna began planning an afternoon walk and found an interesting place near the canal.',
+    'An orange cat ran into the garden and sat near an ancient stone wall.',
+    'In the evening, we opened the window and listened to the wind in the pines.',
+    'We finished painting the kitchen in time to invite our friends for dinner.',
+  ],
+};
+const occurrences = (text, goal) => {
+  let n = 0;
+  for (let at = 0; (at = text.indexOf(goal, at)) !== -1; at++) n++;
+  return n;
+};
+// Идентификатор привязан к предложению.
+const units = (language) => [
+  ...(CORPUS[language] || []).flatMap((text, i) =>
+    (text.match(/[^.!?]+[.!?]+|[^.!?]+$/gu) || []).map((text, j) => ({
+      text: text.trim(),
+      id: `${language}-${i}-s${j}`,
+      parentId: `${language}-${i}`,
+    })),
+  ),
+  ...(extra[language] || []).map((text, i) => ({
+    text,
+    id: `${language}-extra-${i}`,
+    parentId: `${language}-extra-${i}`,
+  })),
+];
+const available = (language, exclude) =>
+  units(language).filter((p) => !exclude.includes(p.id) && !exclude.includes(p.parentId));
+const ranked = (pool, goal) =>
+  pool
+    .filter((p) => p.text.toLowerCase().includes(goal))
+    .map((p) => ({
+      ...p,
+      count: occurrences(p.text.toLowerCase(), goal),
+      first: p.text.toLowerCase().indexOf(goal),
+    }))
+    .sort(
+      (a, b) =>
+        a.first - b.first ||
+        b.count / b.text.length - a.count / a.text.length ||
+        a.id.localeCompare(b.id),
+    );
+function pickGoal(pool, goal, min) {
+  const selected = [];
+  let count = 0;
+  for (const unit of ranked(pool, goal)) {
+    selected.push(unit);
+    count += unit.count;
+    if (count >= min) break;
+  }
+  return count >= min ? selected : null;
+}
 export const MIN_PRACTICE_EXPOSURES = 6;
 export const MIN_CONTROL_EXPOSURES = 4;
-export function makeText(language) {
-  const rows = CORPUS[language] || CORPUS.ru;
-  let text = '';
+export function makeText(language, { exclude = [], first = false } = {}) {
+  const pool = available(language, exclude).filter((row) => !row.id.includes('-extra-'));
+  let parents = shuffle([...new Set(pool.map((row) => row.parentId))]);
+  if (first) parents = [`${language}-0`, ...parents.filter((id) => id !== `${language}-0`)];
+  const ordered = parents.flatMap((id) => pool.filter((row) => row.parentId === id));
+  if (!ordered.length) return null;
+  let text = '', repetitionAt = null;
   const paragraphs = [];
-  let repetitionAt = null;
   while (text.length < 4300) {
-    for (let i = 0; i < rows.length; i++) {
+    for (const row of ordered) {
       if (text) text += ' ';
       const start = text.length;
-      text += rows[i];
-      paragraphs.push({ id: `${language}-${i}`, start, end: text.length });
+      text += row.text;
+      paragraphs.push({ id: row.id, start, end: text.length });
     }
     if (repetitionAt === null) repetitionAt = text.length;
   }
-  return { text, textId: hash(text), paragraphs, repetitionAt };
+  return { text, textId: `corpus-2-${hash(text)}`, paragraphs, repetitionAt };
+}
+
+export function fingerFor(char, language) {
+  if (!char) return 'Следите за положением рук';
+  if (char === ' ') return 'Пробел — большой палец';
+  if (char?.toLowerCase() === 'ё') return 'Левый мизинец';
+  const enRows = ['qwertyuiop[]', "asdfghjkl;'", 'zxcvbnm,./'],
+    ruRows = ['йцукенгшщзхъ', 'фывапролджэ', 'ячсмитьбю.'];
+  let key = char.toLowerCase();
+  if (language === 'ru') {
+    for (let r = 0; r < ruRows.length; r++) {
+      const i = ruRows[r].indexOf(key);
+      if (i >= 0) {
+        key = enRows[r][i];
+        break;
+      }
+    }
+  }
+  const sets = [
+    ['qaz', 'Левый мизинец'],
+    ['wsx', 'Левый безымянный'],
+    ['edc', 'Левый средний'],
+    ['rtfgvb', 'Левый указательный'],
+    ['yuhjnm', 'Правый указательный'],
+    ['ik,', 'Правый средний'],
+    ['ol.', 'Правый безымянный'],
+    ["p[];'/", 'Правый мизинец'],
+  ];
+  return sets.find(([keys]) => keys.includes(key))?.[1] || 'Следите за положением рук';
 }
