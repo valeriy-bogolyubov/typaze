@@ -508,3 +508,105 @@ export class Attempt {
   }
 }
 
+// Сравниваем частоту ошибок с учётом числа наблюдений.
+export function goalEvidence(result, goal = result?.goal) {
+  const row = result?.groups?.find((g) => g.group === goal);
+  const n = Math.max(0, Number(row?.n) || 0),
+    errors = Math.min(n, Math.max(0, Number(row?.errors) || 0));
+  return { n, errors, rate: n ? errors / n : null };
+}
+export function compareGoal(baseline, result, { min = 4 } = {}) {
+  const goal = result?.goal || baseline?.goal,
+    before = goalEvidence(baseline, goal),
+    after = goalEvidence(result, goal);
+  const sources = (record) => record?.groups?.find((g) => g.group === goal)?.sources;
+  const baselineSources = sources(baseline),
+    controlSources = sources(result);
+  const known = (ids) =>
+    Array.isArray(ids) &&
+    ids.length > 0 &&
+    ids.every((id) => typeof id === 'string' && id.length > 0);
+  const enough = !!goal && before.n >= min && after.n >= min;
+  const provenance = known(baselineSources) && known(controlSources);
+  const covered = enough && provenance;
+  const reason =
+    !enough || !provenance ? 'insufficient' : 'comparable';
+  return {
+    covered,
+    reason,
+    samples: { baseline: before.n, control: after.n },
+    delta: covered ? (before.rate - after.rate) * 100 : null,
+    baseline: before,
+    control: after,
+  };
+}
+export function recommendationState(results, current, hasMaterial = () => true) {
+  const valid = [...results.filter((r) => r.id !== current?.id), ...(current ? [current] : [])]
+    .filter(
+      (r) =>
+        r.status === 'completed' &&
+        !r.repeatedMaterial &&
+        ['test', 'control'].includes(r.mode) &&
+        r.version === VERSION &&
+        r.language === current?.language &&
+        r.duration === current?.duration &&
+        Date.now() - Date.parse(r.date) < 30 * 86400000,
+    )
+    .slice(-10);
+  if (!valid.length) return { status: 'no-history', recommendation: null };
+  const totals = new Map();
+  for (const result of valid)
+    for (const row of result.groups || []) {
+      if (!row || !Number.isFinite(row.n) || row.n <= 0) continue;
+      const g = totals.get(row.group) || {
+        group: row.group,
+        n: 0,
+        errors: 0,
+        attempts: 0,
+        errorAttempts: 0,
+        sources: new Set(),
+        errorSources: new Set(),
+      };
+      g.n += row.n;
+      g.errors += row.errors;
+      g.attempts++;
+      if (row.errors) g.errorAttempts++;
+      for (const id of row.sources || []) g.sources.add(id);
+      for (const id of row.errorSources || []) g.errorSources.add(id);
+      totals.set(row.group, g);
+    }
+  const candidates = [...totals.values()].map((g) => ({
+    ...g,
+    recurrent:
+      g.n >= 20 &&
+      g.attempts >= 3 &&
+      g.errors >= 4 &&
+      g.errorAttempts >= 2 &&
+      g.sources.size >= 2 &&
+      g.errorSources.size >= 2,
+  }));
+  const qualified = candidates.filter(
+    (g) =>
+      g.recurrent ||
+      (current?.groups || []).some((x) => x.group === g.group && x.n >= 8 && x.errors >= 3),
+  );
+  if (!qualified.length)
+    return {
+      status: candidates.some((g) => g.n >= 8) ? 'no-pattern' : 'insufficient',
+      recommendation: null,
+    };
+  const available = qualified.filter((g) => hasMaterial(g.group));
+  if (!available.length) return { status: 'no-material', recommendation: null };
+  available.sort(
+    (a, b) =>
+      Number(b.recurrent) - Number(a.recurrent) ||
+      b.errors / b.n - a.errors / a.n ||
+      b.n - a.n ||
+      graphemes(b.group).length - graphemes(a.group).length ||
+      a.group.localeCompare(b.group),
+  );
+  return { status: 'ready', recommendation: available[0] };
+}
+export function recommendation(results, current, hasMaterial = () => true) {
+  return recommendationState(results, current, hasMaterial).recommendation;
+}
