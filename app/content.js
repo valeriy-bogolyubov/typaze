@@ -138,20 +138,67 @@ function pickGoal(pool, goal, min) {
 }
 export const MIN_PRACTICE_EXPOSURES = 6;
 export const MIN_CONTROL_EXPOSURES = 4;
-export function makeText(language, { exclude = [], first = false } = {}) {
-  const pool = available(language, exclude).filter((row) => !row.id.includes('-extra-'));
-  let parents = shuffle([...new Set(pool.map((row) => row.parentId))]);
-  if (first) parents = [`${language}-0`, ...parents.filter((id) => id !== `${language}-0`)];
-  const ordered = parents.flatMap((id) => pool.filter((row) => row.parentId === id));
+export function hasMaterial(language, goal, exclude = []) {
+  if (!goal) return false;
+  const pool = available(language, exclude),
+    training = pickGoal(pool, goal.toLowerCase(), MIN_PRACTICE_EXPOSURES);
+  return (
+    !!training &&
+    !!pickGoal(
+      pool.filter((p) => !training.some((t) => t.id === p.id)),
+      goal.toLowerCase(),
+      MIN_CONTROL_EXPOSURES,
+    )
+  );
+}
+export function makeText(
+  language,
+  { goal = null, exclude = [], first = false, purpose = 'targeted' } = {},
+) {
+  const pool = available(language, exclude);
+  let ordered;
+  if (goal) {
+    goal = goal.toLowerCase();
+    ordered = pickGoal(
+      pool,
+      goal,
+      purpose === 'control' ? MIN_CONTROL_EXPOSURES : MIN_PRACTICE_EXPOSURES,
+    );
+    if (!ordered) return null;
+    // Оставляем отдельные тексты для проверки.
+    const reserve =
+      purpose === 'control'
+        ? []
+        : pickGoal(
+            pool.filter((p) => !ordered.some((t) => t.id === p.id)),
+            goal,
+            MIN_CONTROL_EXPOSURES,
+          );
+    if (!reserve) return null;
+    let length = ordered.reduce((n, p) => n + p.text.length + 1, 0);
+    for (const unit of pool) {
+      if (length >= 1800) break;
+      if (ordered.some((p) => p.id === unit.id) || reserve.some((p) => p.id === unit.id)) continue;
+      ordered.push(unit);
+      length += unit.text.length + 1;
+    }
+  } else {
+    // Сохраняем порядок предложений внутри абзацев.
+    const prose = pool.filter((p) => !p.id.includes('-extra-'));
+    let parents = shuffle([...new Set(prose.map((p) => p.parentId))]);
+    if (first) parents = [`${language}-0`, ...parents.filter((id) => id !== `${language}-0`)];
+    ordered = parents.flatMap((id) => prose.filter((p) => p.parentId === id));
+  }
   if (!ordered.length) return null;
-  let text = '', repetitionAt = null;
   const paragraphs = [];
+  let text = '',
+    repetitionAt = null;
   while (text.length < 4300) {
-    for (const row of ordered) {
+    for (const paragraph of ordered) {
       if (text) text += ' ';
       const start = text.length;
-      text += row.text;
-      paragraphs.push({ id: row.id, start, end: text.length });
+      text += paragraph.text;
+      paragraphs.push({ id: paragraph.id, start, end: text.length });
     }
     if (repetitionAt === null) repetitionAt = text.length;
   }
