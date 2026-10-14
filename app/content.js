@@ -205,6 +205,7 @@ export function makeText(
   return { text, textId: `corpus-2-${hash(text)}`, paragraphs, repetitionAt };
 }
 
+export { LESSONS } from './curriculum.js';
 export function fingerFor(char, language) {
   if (!char) return 'Следите за положением рук';
   if (char === ' ') return 'Пробел — большой палец';
