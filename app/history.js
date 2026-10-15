@@ -24,6 +24,11 @@ export function comparableTests(history, { language, duration }, version) {
     (row) =>
       row.mode === 'test' &&
       row.status === 'completed' &&
+      row.eligible === true &&
+      row.reason === 'deadline' &&
+      !row.repeatedMaterial &&
+      row.version === version &&
+      row.accuracyVersion === 'edit-v1' &&
       row.language === language &&
       row.duration === Number(duration) &&
       Number.isFinite(row.metrics?.wpm),
