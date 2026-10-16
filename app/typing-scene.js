@@ -4,6 +4,12 @@ export function layoutLines(chars, columns) {
   let start = 0;
   while (start < chars.length) {
     let end = Math.min(chars.length, start + columns);
+    if (chars[end] === ' ') end++;
+    else if (end < chars.length && chars[end - 1] !== ' ') {
+      let split = end;
+      while (split > start && chars[split - 1] !== ' ') split--;
+      if (split > start) end = split;
+    }
     lines.push({ start, end });
     start = end;
   }
