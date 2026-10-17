@@ -1,11 +1,312 @@
 <!doctype html>
-<html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>typaze</title><link rel="icon" href="./assets/favicon.ico"><link rel="stylesheet" href="./app/styles.css"></head>
-<body><header class="app-header"><a href="#" class="wordmark">typaze</a></header>
-<main class="workspace"><h1>Практика печати</h1>
-<div class="selectors"><label>Язык <select id="practice-language"><option value="ru">Русский</option><option value="en">English</option></select></label>
-<label>Время <select id="practice-duration"><option value="30">30 с</option><option value="60">60 с</option></select></label></div>
-<p id="clock" role="status"></p><div id="reference" class="text-window"></div>
-<label for="typing-input">Введите текст</label><textarea id="typing-input" spellcheck="false" autocomplete="off"></textarea>
-<p id="result" role="status"></p><button id="restart" type="button">Новый тест</button></main>
-<script type="module" src="./app/main.js"></script></body></html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="color-scheme" content="dark" />
+    <meta name="theme-color" content="#1b1e20" />
+    <meta
+      name="description"
+      content="typaze — практика точной и быстрой печати на русском и английском. Начните с первого символа."
+    />
+    <title>typaze</title>
+    <link
+      rel="icon"
+      href="./assets/favicon.ico?v=2"
+      sizes="16x16 32x32"
+      media="(prefers-color-scheme: light)"
+    />
+    <link
+      rel="icon"
+      href="./assets/favicon-dark.ico?v=2"
+      sizes="16x16 32x32"
+      media="(prefers-color-scheme: dark)"
+    />
+    <link rel="icon" href="./assets/favicon.svg?v=2" type="image/svg+xml" sizes="any" />
+    <link
+      rel="preload"
+      href="./assets/JetBrainsMono-Regular.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
+    <link rel="stylesheet" href="./app/styles.css" />
+    <script type="module" src="./app/main.js"></script>
+  </head>
+  <body>
+    <a class="skip-link" href="#main">К тренировке</a>
+    <header class="app-header">
+      <a class="wordmark" href="#practice" aria-label="typaze, практика"
+        >typaze<span aria-hidden="true"></span
+      ></a>
+      <div class="header-actions">
+        <nav aria-label="Основные разделы">
+          <a href="#practice" data-route="practice" aria-current="page">Практика</a
+          ><a href="#learn" data-route="learn">Обучение</a
+          ><a href="#progress" data-route="progress">Прогресс</a>
+        </nav>
+        <label class="interface-language"
+          ><span class="sr-only">Язык интерфейса</span
+          ><select id="interface-language">
+            <option value="ru">RU</option>
+            <option value="en">EN</option>
+          </select></label
+        >
+      </div>
+    </header>
+    <main id="main" tabindex="-1">
+      <section id="practice-view" class="workspace" aria-label="Тренировка">
+        <div class="service-row"><h1 id="service-title" class="sr-only">Тренировка</h1></div>
+        <section
+          id="result-overview"
+          class="result-overview"
+          aria-label="Результат"
+          hidden
+        ></section>
+        <div
+          id="result-inspect-controls"
+          class="result-inspect-controls"
+          role="group"
+          aria-label="Разбор попытки"
+          hidden
+        >
+          <button
+            id="result-text-toggle"
+            type="button"
+            data-action="inspect-text"
+            aria-expanded="false"
+            aria-controls="result-text"
+          >
+            Текст</button
+          ><button
+            id="result-details-toggle"
+            type="button"
+            data-action="inspect-details"
+            aria-expanded="false"
+            aria-controls="attempt-details"
+          >
+            Аналитика
+          </button>
+        </div>
+        <details id="result-text" class="result-text" open>
+          <summary id="result-text-summary" hidden>Набранный текст</summary>
+          <div class="result-text-content">
+            <div id="result-review-tools" hidden>
+              <button
+                id="review-entry"
+                type="button"
+                class="text-button"
+                data-action="review-first"
+              >
+                К первой ошибке
+              </button>
+            </div>
+            <div id="typing-surface" class="typing-surface">
+              <div id="text-window" class="text-window" aria-hidden="true"></div>
+              <div id="caret" class="caret" aria-hidden="true"></div>
+              <label class="sr-only" for="typing-input">Тренировочный ввод</label>
+              <p id="source-description" class="sr-only"></p>
+              <textarea
+                id="typing-input"
+                rows="3"
+                spellcheck="false"
+                autocapitalize="off"
+                autocomplete="off"
+                autocorrect="off"
+                aria-describedby="source-description input-help"
+              ></textarea>
+            </div>
+            <section
+              id="error-review"
+              class="error-review"
+              aria-labelledby="review-description"
+              hidden
+            >
+              <div class="review-meta">
+                <h2
+                  id="review-description"
+                  tabindex="-1"
+                  aria-describedby="review-comparison review-uncertainty"
+                ></h2>
+                <span id="review-uncertainty" hidden></span>
+              </div>
+              <p id="review-comparison" class="review-comparison"></p>
+              <div class="review-navigation">
+                <div id="review-stepping">
+                  <button
+                    id="review-previous"
+                    type="button"
+                    class="text-button"
+                    data-action="review-previous"
+                  >
+                    Предыдущая</button
+                  ><button
+                    id="review-next"
+                    type="button"
+                    class="text-button"
+                    data-action="review-next"
+                  >
+                    Следующая
+                  </button>
+                </div>
+                <button type="button" class="text-button" data-action="review-return">
+                  К последнему фрагменту
+                </button>
+              </div>
+            </section>
+          </div>
+        </details>
+        <div id="practice-controls" class="practice-controls">
+          <div class="selectors">
+            <div id="practice-options" class="practice-options">
+              <label class="text-select"
+                ><span class="sr-only">Режим практики</span
+                ><select id="mode-select">
+                  <option value="test">Тест</option>
+                  <option value="free">Свободно</option>
+                  <option value="adaptive">По моим ошибкам</option>
+                </select></label
+              ><label id="duration-label" class="text-select"
+                ><span class="sr-only">Длительность теста</span
+                ><select id="duration-select">
+                  <option value="30">30 с</option>
+                  <option value="60">60 с</option>
+                </select></label
+              >
+            </div>
+            <div id="practice-languages"></div>
+          </div>
+          <div class="practice-secondary">
+            <button
+              id="keyboard-button"
+              class="quiet keyboard-toggle"
+              type="button"
+              data-action="keyboard"
+              aria-pressed="false"
+              aria-controls="keyboard-hint"
+            >
+              Клавиатура
+            </button>
+            <div id="live-actions" class="text-actions"></div>
+          </div>
+        </div>
+        <p id="input-help" class="input-help" hidden></p>
+        <aside
+          id="keyboard-hint"
+          class="keyboard-hint"
+          aria-label="Подсказка клавиатуры"
+          hidden
+        ></aside>
+        <details id="finger-guide" class="finger-guide" hidden></details>
+        <p id="input-status" class="input-status" role="status" aria-live="polite"></p>
+        <section id="result-panel" class="result-panel" hidden></section>
+        <section id="adaptive-panel" class="adaptive-panel" hidden></section>
+      </section>
+      <section id="learn-view" class="page-view" hidden></section>
+      <section id="progress-view" class="page-view" hidden></section>
+    </main>
+    <footer class="app-footer">
+      <button id="shortcuts-button" class="quiet" type="button">Горячие клавиши</button>
+      <p id="footer-note" hidden></p>
+      <button id="settings-button" class="quiet" type="button">Настройки</button>
+    </footer>
+    <div
+      id="announcement"
+      class="sr-only"
+      role="status"
+      aria-live="polite"
+      aria-atomic="true"
+    ></div>
+    <dialog id="settings-dialog" aria-labelledby="settings-title">
+      <form method="dialog">
+        <div class="dialog-head">
+          <h2 id="settings-title">Настройки</h2>
+          <button type="submit">Закрыть</button>
+        </div>
+        <label class="setting-label" for="font-size"
+          >Размер текста <output id="font-output"></output></label
+        ><input id="font-size" type="range" min="28" max="44" step="2" /><label class="check-label"
+          ><input id="reduced-motion" type="checkbox" /> Уменьшить движение</label
+        ><button id="export-button" type="button" class="text-button">Скачать историю</button
+        ><button id="import-button" type="button" class="text-button">Восстановить из файла</button
+        ><input id="backup-file" type="file" accept=".json,application/json" hidden /><button
+          id="original-export-button"
+          type="button"
+          class="text-button"
+          hidden
+        >
+          Скачать исходные данные
+        </button>
+        <p id="backup-status" class="backup-status" role="status" hidden></p>
+        <button id="clear-button" type="button" class="text-button danger">Удалить историю</button>
+      </form>
+    </dialog>
+    <dialog id="shortcuts-dialog" aria-labelledby="shortcuts-title">
+      <form method="dialog">
+        <div class="dialog-head">
+          <h2 id="shortcuts-title">Горячие клавиши</h2>
+          <button type="submit">Закрыть</button>
+        </div>
+        <dl class="shortcut-list">
+          <div>
+            <dt><kbd>Esc</kbd></dt>
+            <dd>Прервать тест; приостановить или продолжить практику</dd>
+          </div>
+          <div>
+            <dt><kbd>Ctrl</kbd> + <kbd>Enter</kbd></dt>
+            <dd>Новый текст</dd>
+          </div>
+          <div>
+            <dt><kbd>Tab</kbd></dt>
+            <dd>Перейти к управлению</dd>
+          </div>
+          <div>
+            <dt><kbd>Backspace</kbd></dt>
+            <dd>Исправить ввод</dd>
+          </div>
+        </dl>
+        <p>Переключение в другое окно прерывает тест на время.</p>
+      </form>
+    </dialog>
+    <dialog id="leave-dialog" aria-labelledby="leave-title">
+      <form method="dialog">
+        <h2 id="leave-title">Прервать попытку?</h2>
+        <p>Попытка останется незавершённой.</p>
+        <div class="actions">
+          <button type="submit" autofocus>Остаться</button
+          ><button id="confirm-leave" type="button" class="text-button">Прервать и перейти</button>
+        </div>
+      </form>
+    </dialog>
+    <dialog id="clear-dialog" aria-labelledby="clear-title">
+      <form method="dialog">
+        <h2 id="clear-title">Удалить историю занятий?</h2>
+        <p>Результаты, рекорды и прогресс обучения будут удалены.</p>
+        <div class="actions">
+          <button type="submit" autofocus>Отмена</button
+          ><button id="confirm-clear" type="button" class="text-button danger">
+            Удалить историю
+          </button>
+        </div>
+      </form>
+    </dialog>
+    <dialog id="restore-dialog" aria-labelledby="restore-title">
+      <form method="dialog">
+        <h2 id="restore-title">Восстановить историю?</h2>
+        <dl id="restore-summary" class="restore-summary"></dl>
+        <p id="restore-error" class="backup-status" role="alert" hidden></p>
+        <div class="actions">
+          <button type="submit" autofocus>Отмена</button
+          ><button id="confirm-restore" type="button" class="text-button primary">
+            Восстановить
+          </button>
+        </div>
+      </form>
+    </dialog>
+    <noscript
+      ><p class="no-script">
+        Для тренировки нужен JavaScript. Включите его и обновите страницу.
+      </p></noscript
+    >
+  </body>
+</html>
