@@ -1038,7 +1038,15 @@ function renderAdaptive() {
   html('live-actions', '');
   $('service-title').className = 'sr-only';
   text('service-title', 'По моим ошибкам');
-  $('adaptive-panel').innerHTML = `<h1>${h(t('Пройдите тест'))}</h1><div class="actions">${button('Новый тест', 'new', { primary: true })}</div>`;
+  const messages = {
+      'no-history': ['Сначала — короткий тест', 'Пройти тест'],
+      insufficient: ['Нужно больше данных', 'Пройти ещё один тест'],
+      'no-pattern': ['Пока нет повторяющихся ошибок', 'Новый тест'],
+      'no-material': ['Нет нового текста для отработки', 'Новый тест'],
+    },
+    [title, label] = messages[state.adaptiveStatus] || messages.insufficient;
+  $('adaptive-panel').innerHTML =
+    `<h1>${h(t(title))}</h1><div class="actions">${button(label, 'new', { primary: true })}</div>`;
   dropdowns.refresh();
 }
 function renderLearn() {
