@@ -929,7 +929,29 @@ function renderAdaptive() {
 }
 function renderLearn() {
   state.language = exerciseLanguage(settings);
-  $('learn-view').innerHTML = `<div class="page-head"><h1>${h(t('Слепая печать'))}</h1><div id="course-languages"></div></div><div class="lesson-list">${LESSONS[state.language].map((lesson, i) => `<button type="button" class="lesson-row" data-action="lesson" data-value="${h(lesson.id)}"><span class="lesson-index">${i + 1}</span><span><h2>${h(t(lesson.title))}</h2></span></button>`).join('')}</div>`;
+  const rows = LESSONS[state.language],
+    next = nextLesson(state.language, history, Date.now(), progress);
+  const started = rows.some(
+    (lesson) => lessonStatus(lesson, history, Date.now(), progress).attempts,
+  );
+  $('learn-view').innerHTML =
+    `<div class="page-head"><div class="course-heading"><h1>${h(t('Слепая печать'))}</h1><div id="course-languages"></div></div>${button(started ? 'Продолжить' : 'Начать', 'lesson', { primary: true, value: next.id })}</div><div class="lesson-list">${rows
+      .map((lesson, i) => {
+        const status = lessonStatus(lesson, history, Date.now(), progress);
+        const label = status.reviewNeeded
+          ? 'Повторить'
+          : status.due
+            ? 'Повторить сегодня'
+            : status.retained
+              ? 'Закреплён'
+              : status.passed
+                ? 'Пройден'
+                : status.attempts
+                  ? `${status.completedUnits} / ${status.totalUnits}`
+                  : '';
+        return `<button type="button" class="lesson-row" data-action="lesson" data-value="${h(lesson.id)}"><span class="lesson-index">${i + 1}</span><span><h2>${h(t(lesson.title))}</h2>${lesson.keys ? `<code class="lesson-keys">${h([...lesson.keys].join(' '))}</code>` : ''}</span><span class="${status.passed ? 'lesson-completed' : 'lesson-go'}">${h(t(label))}</span></button>`;
+      })
+      .join('')}</div>`;
   mountTextLanguage('course-languages', state.language);
   dropdowns.refresh();
 }
