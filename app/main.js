@@ -1117,8 +1117,116 @@ function chooseProgress(key, value) {
     ?.focus({ preventScroll: true });
 }
 function renderProgress() {
-  const rows = historyRows(history, { ...state.filter, mode: 'all', duration: 'all' });
-  $('progress-view').innerHTML = `<div class="page-head"><h1>${h(t('Прогресс'))}</h1></div><div class="history-list">${rows.map((row) => `<button type="button" class="history-entry history-open" data-action="open-result" data-value="${h(row.id)}"><span>${h(dateLabel(row.date))}</span><span>${number(row.metrics.wpm)} WPM</span><span>${accuracy(row.metrics.accuracy)}</span></button>`).join('')}</div>`;
+  const filters = state.filter,
+    rows = historyRows(history, filters);
+  const languageHistory = history.filter((r) => r.language === filters.language);
+  const tests = comparableTests(
+      history,
+      { language: filters.language, duration: state.progressDuration },
+      VERSION,
+    ),
+    latestTest = tests.at(-1);
+  const latest = history.at(-1),
+    latestHidden = latest && !rows.some((row) => row.id === latest.id);
+  const best = bestRecord(progress, {
+    language: filters.language,
+    duration: state.progressDuration,
+    version: VERSION,
+  });
+  const modeOptions = Object.entries(progressModeLabels).filter(
+    ([mode]) =>
+      mode === 'all' || mode === filters.mode || languageHistory.some((r) => r.mode === mode),
+  );
+  const median = (list) => {
+    const sorted = list.map((r) => r.metrics.wpm).sort((a, b) => a - b);
+    return sorted.length % 2
+      ? sorted[(sorted.length - 1) / 2]
+      : (sorted[sorted.length / 2 - 1] + sorted[sorted.length / 2]) / 2;
+  };
+  let change = '';
+  if (tests.length >= 10) {
+    const before = median(tests.slice(-10, -5)),
+      after = median(tests.slice(-5)),
+      delta = after - before;
+    change = `<p class="progress-change">${h(t('Медиана последних 5'))} <span>${number(after)} WPM</span><span class="trend-delta">${delta > 0 ? '+' : ''}${number(delta)} WPM</span><span>${h(t('к предыдущим 5'))}</span></p>`;
+  }
+  const metric = state.progressMetric;
+  const curve =
+    tests.length > 1
+      ? chartMarkup(
+          tests.slice(-20).map((r) => ({
+            label: dateLabel(r.date),
+            value: metric === 'accuracy' ? r.metrics.accuracy : r.metrics.wpm,
+          })),
+          metric === 'accuracy'
+            ? 'Точность сопоставимых тестов'
+            : 'Сопоставимые результаты тестов, от старых к новым',
+          { metric },
+        )
+      : '';
+  const record = best
+    ? `<p class="progress-record">${h(t('Рекорд'))} <span>${number(best.wpm)} WPM</span><span>${accuracy(best.accuracy)}</span></p>`
+    : '';
+  const testSummary = latestTest
+    ? `<div class="progress-test-body${curve ? ' has-curve' : ''}"><div class="progress-test-summary"><p class="progress-pace"><span>${number(latestTest.metrics.wpm)}</span><small>WPM</small></p><p class="progress-accuracy"><span>${accuracy(latestTest.metrics.accuracy)}</span><small>${h(t('точность'))}</small></p><p class="progress-test-note">${h(t('Последний тест'))}<time datetime="${h(latestTest.date)}">${h(dateLabel(latestTest.date))}</time></p>${record}</div>${
+        curve
+          ? `<div class="progress-trend">${progressChoices(
+              'metric',
+              [
+                ['wpm', 'Темп'],
+                ['accuracy', 'Точность'],
+              ],
+              metric,
+              'Показатель графика',
+            )}${curve}</div>`
+          : ''
+      }</div>${change}`
+    : `<div class="progress-no-tests"><p>${h(t('Пока нет завершённых тестов.'))}</p>${button('Пройти тест', 'progress-test')}${record}</div>`;
+  const activityName = (r) => {
+    if (r.mode === 'lesson') {
+      const lesson = LESSONS[r.language]?.find((row) => row.id === r.lessonId);
+      return lesson
+        ? `${t(lesson.title)}${Number.isInteger(r.lessonUnit) ? ` · ${r.lessonUnit + 1}/${r.lessonUnitCount || lesson.units.length}` : ''}`
+        : t('Урок');
+    }
+    return `${t(modeNames[r.mode] || r.mode)}${r.goal ? ` «${r.goal}»` : ''}`;
+  };
+  $('progress-view').innerHTML =
+    `<div class="page-head progress-head"><div class="course-heading"><h1>${h(t('Прогресс'))}</h1><div id="history-languages"></div></div></div>${
+      history.length || best
+        ? `${
+            languageHistory.length || best
+              ? `<section class="progress-tests" aria-labelledby="progress-tests-title"><div class="progress-section-head"><h2 id="progress-tests-title">${h(t('Тесты'))}</h2>${progressChoices(
+                  'duration',
+                  [
+                    [30, '30 с'],
+                    [60, '60 с'],
+                  ],
+                  state.progressDuration,
+                  'Длительность теста',
+                )}</div>${testSummary}</section>`
+              : ''
+          }<section class="progress-history" aria-labelledby="progress-history-title"><div class="progress-section-head"><h2 id="progress-history-title">${h(t('История'))}</h2>${latestHidden ? `<button type="button" class="quiet latest-session" data-action="show-latest">${h(t('Последнее занятие'))}</button>` : ''}</div>${languageHistory.length ? progressChoices('mode', modeOptions, filters.mode, 'Режим занятий') : ''}${
+            rows.length
+              ? `<div class="history-columns" aria-hidden="true"><span>${h(t('Занятие'))}</span><span>WPM</span><span>${h(t('Точность'))}</span><span></span></div><ol class="history-list">${rows
+                  .slice(0, state.historyLimit)
+                  .map(
+                    (r) =>
+                      `<li><button type="button" class="history-entry history-open" data-action="open-result" data-value="${h(r.id)}"><span class="history-activity"><span class="history-mode">${h(activityName(r))}${!['lesson', 'free'].includes(r.mode) ? ` <span class="history-duration">${h(t(`${r.duration} с`))}</span>` : ''}</span><time datetime="${h(r.date)}">${h(dateLabel(r.date))}</time>${r.status === 'interrupted' ? `<span class="history-status">${h(t('Прервано'))}</span>` : ''}</span><span class="history-number"><span class="sr-only">WPM </span>${r.status === 'interrupted' || r.mode === 'lesson' ? '—' : number(r.metrics.wpm)}</span><span class="history-number"><span class="sr-only">${h(t('Точность'))} </span>${r.status === 'interrupted' ? '—' : accuracy(r.metrics.accuracy)}</span><span class="history-arrow" aria-hidden="true">↗</span></button></li>`,
+                  )
+                  .join(
+                    '',
+                  )}</ol>${rows.length > state.historyLimit ? button('Показать ещё', 'history-more') : ''}`
+              : `<div class="progress-empty-filter"><p>${h(t('Нет занятий'))}</p>${languageHistory.length ? button('Все занятия', 'history-all') : button('Начать практику', 'progress-test', { primary: true })}</div>`
+          }</section>${storageWarning ? `<p class="save-message" role="status">${h(t(storageWarning))}</p>` : ''}`
+        : `<div class="empty-state"><h2>${h(t('Пока нет результатов'))}</h2><div class="actions">${button('Начать практику', 'progress-test', { primary: true })}</div></div>`
+    }`;
+  localize($('progress-view'));
+  languageSwitches.mount($('history-languages'), {
+    language: filters.language,
+    history: true,
+    label: t('Язык истории'),
+  });
   dropdowns.refresh();
 }
 function openResult(id) {
