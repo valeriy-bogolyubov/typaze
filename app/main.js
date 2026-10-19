@@ -815,9 +815,76 @@ function renderResult() {
   const r = state.result || state.attempt.savedResult;
   if (!r) return;
   state.result = r;
-  text('service-title', r.status === 'completed' ? 'Результат' : 'Тест прерван');
-  $('result-overview').innerHTML = `<dl class="result-dashboard"><div><dt>WPM</dt><dd>${number(r.metrics.wpm)}</dd></div><div><dt>${h(t('Точность'))}</dt><dd>${accuracy(r.metrics.accuracy)}</dd></div></dl>`;
-  $('result-panel').innerHTML = `<div class="actions">${button('Новый тест', 'new', { primary: true })}${button('Прогресс', 'progress')}</div>${detailsMarkup(r)}`;
+  const service = $('service-title'),
+    panel = $('result-panel');
+  if (r.status === 'interrupted') {
+    service.className = '';
+    service.textContent = t(r.mode === 'lesson' ? 'Урок прерван' : 'Тест прерван');
+    if (r.mode === 'lesson') {
+      panel.innerHTML = `<div class="actions">${LESSONS[r.language].some((lesson) => lesson.id === r.lessonId) ? button('Повторить', 'repeat-lesson', { primary: true, value: `${r.lessonId}:${r.lessonUnit || 0}` }) : ''}${button('К курсу', 'learn')}</div>${saveNotice()}`;
+      return;
+    }
+    panel.innerHTML = `<div class="actions">${button('Новый тест', 'new', { primary: true })}${button('Продолжить свободно', 'continue-free')}${button('Прогресс', 'progress')}</div>${saveNotice()}`;
+    return;
+  }
+  const m = r.metrics;
+  service.className = 'result-title';
+  service.textContent = t(r.mode === 'lesson' ? 'Упражнение завершено' : 'Результат');
+  if (r.mode !== 'lesson') {
+    text('result-text-summary', 'Набранный текст');
+  }
+  if (r.mode === 'lesson') {
+    renderLessonResult(r);
+    panel.innerHTML = '';
+    return;
+  }
+  let rec = null;
+  if (['test', 'control'].includes(r.mode))
+    rec = recommendation(history, r, (g) => hasMaterial(r.language, g, r.seen));
+  const goal = rec?.group;
+  let observation = '',
+    actions = '',
+    recovery = false;
+  if (r.mode === 'targeted') {
+    const evidence = goalEvidence(r, r.goal);
+    observation =
+      evidence.n < MIN_PRACTICE_EXPOSURES
+        ? `<p class="supporting">${h(t(`Повторы «${r.goal}»: ${evidence.n} из ${MIN_PRACTICE_EXPOSURES}`))}</p>`
+        : '';
+    actions =
+      state.journey?.baseline && evidence.n >= MIN_PRACTICE_EXPOSURES
+        ? button('Проверить результат', 'control', { primary: true })
+        : button('Продолжить отработку', 'repeat-target', { primary: true });
+  } else if (m.accuracy === null) {
+    observation = '<p class="supporting">Нет набранного текста</p>';
+    actions = button('Новый текст', 'new', { primary: true });
+  } else if (goal) {
+    observation = `<p class="result-insight supporting">${h(t(`Ошибки с «${goal}»: ${rec.errors} из ${rec.n}`))}</p>`;
+    actions = button(`Потренировать «${goal}»`, 'practice-group', { primary: true, value: goal });
+  } else {
+    actions = button('Новый текст', 'new', { primary: true });
+  }
+  if (r.mode === 'control') {
+    const outcome = controlOutcome(
+      state.journey?.baseline || history.find((row) => row.id === r.baselineId),
+      r,
+    );
+    if (outcome.action) {
+      actions = button(outcome.label, outcome.action, { primary: true });
+      observation = '';
+      recovery = true;
+    }
+  }
+  if (r.mode === 'targeted' && !state.journey?.baseline) {
+    actions = button('Пройти тест', 'new', { primary: true });
+    observation = `<div class="result-insight"><h2>${h(t('Нет теста для сравнения'))}</h2></div>`;
+    recovery = true;
+  }
+  const note = recordNote(r),
+    comparison = r.mode === 'control' ? comparisonMarkup(r) : '';
+  $('result-overview').innerHTML =
+    `${summaryMarkup(r)}${comparison}${observation}<div class="actions">${actions}${!recovery && (goal || r.mode === 'targeted') ? button('Новый тест', 'new') : ''}${state.fromHistory && r.baselineId && history.some((row) => row.id === r.baselineId) ? button('До отработки', 'open-result', { value: r.baselineId }) : ''}${button(state.fromHistory ? 'К истории' : 'Прогресс', 'progress')}</div>${note ? `<p class="record-note">${h(note)}</p>` : ''}${r.repeatedMaterial ? '<p class="supporting">Рекорд не обновлён: текст повторился.</p>' : ''}${r.reason === 'material' && r.mode !== 'free' ? '<p class="supporting">Текст закончился до таймера — без рекорда.</p>' : ''}${saveNotice()}`;
+  panel.innerHTML = detailsMarkup(r);
 }
 function summaryMarkup(r) {
   const m = r.metrics;
@@ -895,7 +962,54 @@ function renderFingerGuide() {
   guide.innerHTML = `<summary>${h(t('Пальцы'))}</summary><div class="finger-map">${[...groups].map(([finger, keys]) => `<div><span>${h(t(finger))}</span><code>${h(keys.join(' '))}</code></div>`).join('')}<div><span>${h(t('Пробел — большой палец'))}</span><kbd>${h(t('Пробел'))}</kbd></div></div>`;
 }
 function detailsMarkup(r) {
-  return `<details id="attempt-details" class="details"><summary>Подробности попытки</summary><div class="detail-content">${h(t('Активное время:'))} ${number(r.seconds)} с</div></details>`;
+  const analysis = analyzeResult(r),
+    errors = reviewErrors(r),
+    typeLabels = {
+      substitution: 'Замены',
+      omission: 'Пропуски',
+      insertion: 'Лишние символы',
+      transposition: 'Перестановки',
+    };
+  const total = analysis.types.reduce((sum, row) => sum + row.count, 0);
+  const types = total
+    ? `<section class="analysis-error-types" aria-labelledby="error-types-title"><h2 id="error-types-title">Типы ошибок</h2><dl>${analysis.types.map((row) => `<div><dt>${h(t(typeLabels[row.kind]))}</dt><dd><span class="error-type-track" aria-hidden="true"><span style="width:${(row.count / total) * 100}%"></span></span><span>${number(row.count, 0)}</span></dd></div>`).join('')}</dl></section>`
+    : '';
+  const pace =
+    analysis.bins.length > 1
+      ? `<section class="analysis-pace" aria-labelledby="analysis-pace-title"><div class="analysis-section-head"><h2 id="analysis-pace-title">Темп</h2></div>${chartMarkup(
+          analysis.bins.map((b) => ({
+            label: `${number(b.second)}–${number(b.end)} ${uiLanguage() === 'en' ? 's' : 'с'}`,
+            value: b.wpm,
+          })),
+          'Темп по отрезкам активного времени',
+        )}</section>`
+      : '';
+  const groups = analysis.groups.slice(0, 12);
+  const groupRows = (list) =>
+    list
+      .map(
+        (g) =>
+          `<div class="analysis-group"><code>${h(g.group)}</code><span class="group-frequency"><span class="group-rate-track" aria-hidden="true"><span style="width:${g.rate * 100}%"></span></span><span>${g.errors} ${h(t('из'))} ${g.n}</span></span>${hasMaterial(r.language, g.group, r.seen) ? `<button type="button" class="text-button" data-action="practice-group" data-value="${h(g.group)}">${h(t('Потренировать'))}<span class="sr-only"> «${h(g.group)}»</span></button>` : '<span></span>'}</div>`,
+      )
+      .join('');
+  const groupMarkup = groups.length
+    ? `<section class="analysis-groups" aria-labelledby="analysis-groups-title"><div class="analysis-section-head"><h2 id="analysis-groups-title">${h(t('Символы и сочетания'))}</h2><span>${h(t('Частота ошибок'))}</span></div><div class="analysis-group-list">${groupRows(groups.slice(0, 3))}</div>${groups.length > 3 ? `<details class="analysis-more"><summary>${h(t('Ещё сочетания'))} <span>${groups.length - 3}</span></summary><div class="analysis-group-list">${groupRows(groups.slice(3))}</div></details>` : ''}</section>`
+    : '';
+  const positionErrors = errors.length
+    ? errors
+    : (r.errors || []).filter(
+        (e) => e && typeof e.expected === 'string' && typeof e.actual === 'string',
+      );
+  const errorMarkup = positionErrors.length
+    ? `<section class="analysis-positions" aria-labelledby="analysis-positions-title"><div class="analysis-section-head"><h2 id="analysis-positions-title">Ошибки в тексте</h2>${errors.length ? '<button type="button" class="text-button" data-action="review-first">Разобрать в тексте</button>' : ''}</div><ol class="analysis-error-list">${positionErrors
+        .slice(0, errors.length ? 5 : 20)
+        .map(
+          (error, index) =>
+            `<li>${errors.length ? `<button type="button" data-action="review-index" data-value="${index}" class="analysis-error">` : '<div class="analysis-error">'}<span class="error-fragments"><code>${h(reviewFragment(error.expected, 'Ничего'))}</code>${arrow}<code>${h(reviewFragment(error.actual, 'Не введено'))}</code></span><span class="error-kind">${h(t(errorNames[error.kind]))}${error.ambiguous ? ` · ${h(t('Позиция приблизительная'))}` : ''}</span>${errors.length ? `<span class="sr-only">${h(t('Найти в тексте'))}</span></button>` : '</div>'}</li>`,
+        )
+        .join('')}</ol></section>`
+    : '';
+  return `<details id="attempt-details" class="details"><summary hidden>Подробности попытки</summary><div class="detail-content analytics-content"><dl class="analysis-time"><dt>Активное время:</dt><dd>${h(t(`${number(r.seconds)} с`))}</dd></dl>${pace || types ? `<div class="analysis-overview${pace && types ? ' has-types' : ''}">${pace}${types}</div>` : ''}${groupMarkup}${errorMarkup}</div></details>`;
 }
 
 function renderAdaptive() {
@@ -924,7 +1038,15 @@ function renderAdaptive() {
   html('live-actions', '');
   $('service-title').className = 'sr-only';
   text('service-title', 'По моим ошибкам');
-  $('adaptive-panel').innerHTML = `<h1>${h(t('Пройдите тест'))}</h1><div class="actions">${button('Новый тест', 'new', { primary: true })}</div>`;
+  const messages = {
+      'no-history': ['Сначала — короткий тест', 'Пройти тест'],
+      insufficient: ['Нужно больше данных', 'Пройти ещё один тест'],
+      'no-pattern': ['Пока нет повторяющихся ошибок', 'Новый тест'],
+      'no-material': ['Нет нового текста для отработки', 'Новый тест'],
+    },
+    [title, label] = messages[state.adaptiveStatus] || messages.insufficient;
+  $('adaptive-panel').innerHTML =
+    `<h1>${h(t(title))}</h1><div class="actions">${button(label, 'new', { primary: true })}</div>`;
   dropdowns.refresh();
 }
 function renderLearn() {
