@@ -51,6 +51,8 @@ export function createTypingScene(viewport, caret) {
         previousLine = null;
       }
       const position = scenePosition(options);
+      // Сбрасываем анимацию при смене разметки.
+      track.classList.toggle('scene-reset', reset);
       track.style.transform = `translateY(${position.offset}px)`;
       if (reset || previousLine !== current) caret.classList.add('caret-snap');
       else if (previousX !== position.x) caret.classList.remove('caret-snap');
