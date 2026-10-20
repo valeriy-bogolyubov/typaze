@@ -6,7 +6,9 @@ export function historyRows(history, filters) {
       (row) =>
         row.language === filters.language &&
         (filters.mode === 'all' || row.mode === filters.mode) &&
-        (filters.duration === 'all' ||
+        (filters.mode === 'lesson' ||
+          filters.mode === 'free' ||
+          filters.duration === 'all' ||
           row.duration === Number(filters.duration)),
     );
 }
