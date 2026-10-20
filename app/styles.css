@@ -2547,3 +2547,389 @@ body .app-footer {
   gap: 12px 24px;
 }
 
+.keyboard-toggle {
+  font-size: 14px;
+  white-space: nowrap;
+}
+
+.keyboard-toggle[aria-pressed='true'] {
+  color: var(--mint);
+}
+
+.text-actions:empty {
+  display: none;
+}
+
+.workspace .keyboard-hint {
+  width: min(100%, 720px);
+  margin: 28px auto 0;
+}
+
+.workspace .keyboard-hint .key-row {
+  display: flex;
+  gap: 5px;
+  margin: 5px 0;
+  padding: 0;
+  max-width: none;
+}
+
+.workspace .key-row kbd {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  width: auto;
+  height: 38px;
+  padding: 9px 0;
+  font: 400 14px/1.3 var(--mono);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  color: var(--muted);
+  text-align: center;
+  transition:
+    background-color 100ms var(--ease),
+    border-color 100ms var(--ease),
+    transform 100ms var(--ease);
+}
+
+.workspace .key-row .key-wide {
+  flex: 1.75;
+  font-size: 11px;
+}
+
+.workspace .key-row:nth-of-type(2) {
+  padding-inline: 24px 48px;
+}
+
+.workspace .key-row:nth-of-type(3) {
+  padding-inline: 36px 60px;
+}
+
+.workspace .key-row .key-space {
+  flex: none;
+  width: 45%;
+  margin-inline: auto;
+  font:
+    12px/1.5 system-ui,
+    sans-serif;
+}
+
+.workspace .key-row kbd.home-key::after {
+  content: '';
+  position: absolute;
+  width: 8px;
+  height: 1px;
+  background: currentColor;
+  inset: auto calc(50% - 4px) 5px;
+}
+
+.workspace .key-row kbd.expected {
+  color: var(--mint);
+  border-color: var(--mint);
+  background: #28352c;
+}
+
+.workspace .key-row kbd.pressed {
+  color: var(--text);
+  background: #3b5143;
+  border-color: var(--mint);
+  transform: translateY(1px);
+  transition-duration: 35ms;
+}
+
+.workspace .key-row kbd.wrong-press {
+  color: var(--error);
+  border-color: var(--error);
+  background: var(--bg);
+}
+
+.keyboard-hint.is-paused .key-row {
+  opacity: 0.6;
+}
+
+.motion-reduced .workspace .key-row kbd {
+  transition: none;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .workspace .key-row kbd {
+    transition: none;
+    transform: none;
+  }
+}
+
+@media (max-width: 760px) {
+  .practice-secondary {
+    justify-content: flex-start;
+    gap: 8px 24px;
+  }
+
+  .workspace .keyboard-hint .key-row {
+    gap: 3px;
+  }
+
+  .workspace .key-row kbd {
+    font-size: 12px;
+    height: 32px;
+    padding-block: 7px;
+  }
+
+  .workspace .key-row .key-wide {
+    font-size: 9px;
+  }
+
+  .workspace .key-row:nth-of-type(2) {
+    padding-inline: 12px 24px;
+  }
+
+  .workspace .key-row:nth-of-type(3) {
+    padding-inline: 18px 30px;
+  }
+}
+
+.analytics-content {
+  max-width: 100%;
+}
+
+.analysis-time {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 12px;
+  color: var(--muted);
+  font-size: 14px;
+  margin-bottom: 24px;
+}
+
+.analysis-time dd {
+  color: var(--text);
+  font-family: var(--mono);
+}
+
+.analysis-overview.has-types {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(240px, 1fr);
+  gap: 40px;
+}
+
+.analysis-section-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px 24px;
+}
+
+.has-result-summary .analytics-content h2 {
+  margin-top: 0;
+  font-size: 18px;
+  line-height: 1.5;
+}
+
+.analysis-section-head > span {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.analysis-section-head .text-button {
+  font-size: 14px;
+}
+
+.analysis-pace .tempo-chart {
+  max-height: 170px;
+}
+
+.analysis-pace .tempo-chart text {
+  font-size: 18px;
+}
+
+.analysis-error-types dl {
+  display: grid;
+  gap: 16px;
+  margin-top: 24px;
+}
+
+.analysis-error-types dl > div {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  align-items: center;
+  gap: 16px;
+}
+
+.analysis-error-types dt {
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.analysis-error-types dd {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  font: 14px/1.5 var(--mono);
+}
+
+.error-type-track,
+.group-rate-track {
+  display: block;
+  flex: 1;
+  height: 2px;
+  background: var(--line);
+}
+
+.error-type-track > span {
+  display: block;
+  height: 100%;
+  background: var(--error);
+}
+
+.group-rate-track > span {
+  display: block;
+  height: 100%;
+  background: var(--mint);
+}
+
+.analysis-groups,
+.analysis-positions {
+  margin-top: 32px;
+}
+
+.analysis-group-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: 40px;
+  margin-top: 8px;
+}
+
+.analysis-group {
+  display: grid;
+  grid-template-columns: 48px minmax(80px, 1fr) auto;
+  align-items: baseline;
+  gap: 20px;
+  min-height: 52px;
+  padding-block: 8px;
+  border-bottom: 1px solid var(--line);
+}
+
+.analysis-group code {
+  font: 20px/1.5 var(--mono);
+}
+
+.group-frequency {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 13px;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.analysis-group .text-button {
+  font-size: 13px;
+}
+
+.analysis-error-list {
+  list-style: none;
+  padding: 0;
+  margin: 8px 0 0;
+}
+
+.analysis-error {
+  display: flex;
+  width: 100%;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 16px 32px;
+  padding-block: 12px;
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+}
+
+.error-fragments {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px;
+  min-width: 0;
+}
+
+.error-fragments code {
+  font: 16px/1.5 var(--mono);
+  overflow-wrap: anywhere;
+}
+
+.error-fragments .arrow {
+  color: var(--muted);
+}
+
+.error-fragments .arrow svg {
+  width: 16px;
+}
+
+.error-kind {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+@media (max-width: 760px) {
+  .analysis-overview.has-types {
+    display: block;
+  }
+
+  .analysis-error-types {
+    margin-top: 24px;
+  }
+
+  .analysis-error-types dl {
+    max-width: 440px;
+  }
+
+  .analysis-group-list {
+    grid-template-columns: 1fr;
+  }
+
+  .analysis-group {
+    grid-template-columns: 40px minmax(70px, 1fr) auto;
+    gap: 16px;
+  }
+
+  .analysis-error {
+    flex-wrap: wrap;
+    gap: 4px 20px;
+  }
+
+  .analysis-pace .tempo-chart text {
+    font-size: 20px;
+  }
+}
+
+.workspace:has(#keyboard-hint:not([hidden])) {
+  margin-top: clamp(64px, 12svh, 112px);
+}
+
+.workspace:has(#keyboard-hint:not([hidden])) .practice-controls {
+  margin-top: 32px;
+}
+
+.workspace .key-row kbd > svg {
+  width: 18px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.25;
+}
+
+@media (max-height: 760px) and (min-width: 761px) {
+  .workspace:has(#keyboard-hint:not([hidden])) {
+    margin-top: 64px;
+  }
+
+  .workspace .keyboard-hint {
+    margin-top: 20px;
+  }
+
+  .workspace .key-row kbd {
+    height: 34px;
+    padding-block: 7px;
+  }
+}
+
