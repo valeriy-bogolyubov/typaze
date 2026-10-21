@@ -1758,6 +1758,7 @@ window.addEventListener('blur', loseWindow);
 document.addEventListener('visibilitychange', () => {
   if (document.hidden) loseWindow();
 });
+window.addEventListener('pagehide', loseWindow);
 window.addEventListener('resize', () => {
   cancelAnimationFrame(resizeFrame);
   resizeFrame = requestAnimationFrame(() => {
