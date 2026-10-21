@@ -2933,3 +2933,78 @@ body .app-footer {
   }
 }
 
+.app-header nav {
+  position: relative;
+}
+
+.app-header nav[data-motion-ready='true'] a[aria-current]::after {
+  display: none;
+}
+
+.navigation-marker {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 32px;
+  height: 2px;
+  background: var(--mint);
+  pointer-events: none;
+}
+
+.app-header nav a {
+  transition: color 120ms var(--ease);
+}
+
+.lesson-row .lesson-go,
+.history-entry .history-arrow {
+  transition:
+    color 120ms var(--ease),
+    transform 120ms var(--ease);
+}
+
+.lesson-row:hover .lesson-go,
+.lesson-row:focus-visible .lesson-go {
+  color: var(--mint);
+}
+
+.history-entry:hover .history-arrow,
+.history-entry:focus-visible .history-arrow {
+  transform: translate(2px, -2px);
+  color: var(--mint);
+}
+
+.motion-reduced .app-header nav a,
+.motion-reduced .lesson-row .lesson-go,
+.motion-reduced .history-entry .history-arrow {
+  transition: none;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-header nav a,
+  .lesson-row .lesson-go,
+  .history-entry .history-arrow {
+    transition: none;
+    transform: none !important;
+  }
+}
+
+.language-switch {
+  position: relative;
+}
+
+.language-switch[data-language-motion='true'] [aria-checked='true']::after {
+  display: none;
+}
+
+.language-marker {
+  position: absolute;
+  left: 0;
+  bottom: 5px;
+  width: 1px;
+  height: 1px;
+  background: var(--mint);
+  transform-origin: left center;
+  pointer-events: none;
+}
+
