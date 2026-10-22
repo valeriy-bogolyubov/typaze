@@ -72,7 +72,11 @@ export function load() {
 export function persist(history, settings, { force = false, readOnly = false, progress } = {}) {
   if (readOnly && !force) return false;
   try {
-    if (progress === undefined) progress = emptyProgress();
+    if (progress === undefined) {
+      const saved = load();
+      if (saved.readOnly && !force) return false;
+      progress = saved.progress;
+    }
     if (!isProgress(progress)) return false;
     localStorage.setItem(
       KEY,
