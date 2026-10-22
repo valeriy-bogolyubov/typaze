@@ -21,6 +21,8 @@ export function controlOutcome(baseline, result) {
   if (evidence.baseline.n < MIN_CONTROL_EXPOSURES || !before?.sources?.length)
     return outcome('baseline', 'В первом тесте мало данных', 'new', 'Пройти тест');
   if (evidence.covered) return outcome('compared', 'Частота ошибок', null, null);
+  if (evidence.reason === 'familiar-material')
+    return outcome('familiar', 'Этот текст уже знаком', 'repeat-control', 'Повторить проверку');
   return outcome(
     'coverage',
     'Нужно больше текста для проверки',

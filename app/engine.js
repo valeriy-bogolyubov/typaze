@@ -528,9 +528,10 @@ export function compareGoal(baseline, result, { min = 4 } = {}) {
     ids.every((id) => typeof id === 'string' && id.length > 0);
   const enough = !!goal && before.n >= min && after.n >= min;
   const provenance = known(baselineSources) && known(controlSources);
-  const covered = enough && provenance;
+  const familiar = provenance && baselineSources.some((id) => controlSources.includes(id));
+  const covered = enough && provenance && !familiar;
   const reason =
-    !enough || !provenance ? 'insufficient' : 'comparable';
+    !enough || !provenance ? 'insufficient' : familiar ? 'familiar-material' : 'comparable';
   return {
     covered,
     reason,
