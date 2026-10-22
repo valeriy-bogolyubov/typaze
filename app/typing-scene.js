@@ -86,7 +86,11 @@ export function createTypingScene(viewport, caret) {
           }
           row = { line, letters, element };
           mounted.set(index, row);
-          track.insertBefore(element, caret);
+          // Порядок узлов совпадает с порядком строк.
+          const next = [...mounted]
+            .filter(([other]) => other > index)
+            .sort((a, b) => a[0] - b[0])[0]?.[1].element;
+          track.insertBefore(element, next || caret);
         }
         rendered.push(row);
       }
