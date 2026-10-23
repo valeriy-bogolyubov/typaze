@@ -53,12 +53,13 @@ export function keyboardRows(language) {
     [{ code: 'Space', lower: ' ', upper: ' ', label: 'Пробел', size: 'space' }],
   ];
 }
-export function keyHint(char, language) {
+export function keyHint(char, language, { capsLock = false } = {}) {
   if (typeof char !== 'string' || !char) return null;
   const normalized = char.normalize('NFC');
   for (const key of keyboardRows(language).flat()) {
     if (key.lower !== normalized && key.upper !== normalized) continue;
-    const shift = key.upper !== key.lower && normalized === key.upper;
+    const isLetter = /\p{L}/u.test(normalized);
+    const shift = key.upper !== key.lower && (normalized === key.upper) !== (isLetter && capsLock);
     return { code: key.code, shift };
   }
   return null;
