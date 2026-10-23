@@ -6,6 +6,7 @@ export function practiceSources(journey, { baseline, goal, extra = [] }) {
   const same = !!baseline && journey?.baseline?.id === baseline.id && journey.goal === goal;
   return [
     ...new Set([
+      ...(same ? sources(journey.practiceSeen) : []),
       ...(same ? sources(journey.practice?.seen) : []),
       ...sources(extra),
     ]),
@@ -19,6 +20,7 @@ export function restoreJourney(result, history) {
     practice: result.mode === 'targeted' ? result : null,
     practiceSeen: [
       ...new Set([
+        ...sources(result.practiceSeen),
         ...(result.mode === 'targeted' ? sources(result.seen) : []),
       ]),
     ],
