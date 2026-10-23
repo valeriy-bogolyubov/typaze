@@ -3008,3 +3008,171 @@ body .app-footer {
   pointer-events: none;
 }
 
+.lesson-summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 28px 72px;
+}
+
+.lesson-summary > div {
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 4px;
+}
+
+.lesson-summary dt {
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.lesson-summary dd {
+  font: 400 42px/1.4 var(--mono);
+  letter-spacing: -0.025em;
+}
+
+.lesson-summary > div:first-child dd {
+  font-size: 56px;
+  color: var(--mint);
+}
+
+.lesson-summary dd small {
+  font-size: 28px;
+  color: var(--muted);
+}
+
+.lesson-feedback {
+  margin-top: 28px;
+  max-width: 560px;
+}
+
+.lesson-feedback h2 {
+  font-size: 14px !important;
+  color: var(--muted);
+  margin: 0 0 12px;
+}
+
+.lesson-feedback > div {
+  display: grid;
+  gap: 10px;
+}
+
+.lesson-feedback > div > span {
+  display: grid;
+  grid-template-columns: minmax(72px, max-content) minmax(0, 1fr) auto;
+  gap: 16px;
+  align-items: baseline;
+}
+
+.lesson-feedback code {
+  font: 18px/1.5 var(--mono);
+  color: var(--error);
+}
+
+.lesson-feedback span span {
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.finger-guide {
+  margin-top: 20px;
+  max-width: 720px;
+}
+
+.finger-guide summary {
+  display: inline-block;
+  cursor: pointer;
+  min-height: 44px;
+  padding-block: 10px;
+  color: var(--muted);
+  font-size: 14px;
+  list-style: none;
+}
+
+.finger-guide summary::-webkit-details-marker {
+  display: none;
+}
+
+.finger-guide[open] summary {
+  color: var(--mint);
+}
+
+.finger-map {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px 40px;
+  padding-block: 8px 12px;
+}
+
+.finger-map > div {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px 16px;
+}
+
+.finger-map span {
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.finger-map code {
+  font: 16px/1.6 var(--mono);
+}
+
+.finger-map kbd {
+  border: 0;
+  padding: 0;
+  font-size: 14px;
+}
+
+.adaptive-panel {
+  margin-top: 0;
+  padding-top: 28px;
+}
+
+.adaptive-panel h1 {
+  font-size: 28px;
+  line-height: 1.5;
+}
+
+.readable-chart {
+  position: relative;
+  margin: 0;
+  padding-left: 48px;
+  min-width: 0;
+}
+
+.readable-chart .tempo-chart {
+  height: 132px;
+  width: 100%;
+  max-height: none;
+  overflow: visible;
+}
+
+.chart-scale {
+  position: absolute;
+  inset: 0 auto 26px 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.readable-chart figcaption {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 8px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.readable-chart figcaption span:last-child {
+  text-align: right;
+}
+
