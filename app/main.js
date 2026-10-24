@@ -13,6 +13,7 @@ import {
   persist,
   upsert,
   readStoredBackup,
+  readProtectedBackup,
   commitImport,
 } from './storage.js';
 import { emptyProgress, recordProgress, bestRecord } from './progress-state.js';
@@ -1791,7 +1792,7 @@ $('settings-button').addEventListener('click', () => {
   $('reduced-motion').checked = !!settings.reducedMotion;
   $('settings-dialog').showModal();
   $('import-button').disabled = isActive();
-  $('original-export-button').hidden = !storageReadOnly;
+  $('original-export-button').hidden = !storageReadOnly && !readProtectedBackup();
   $('backup-status').hidden = true;
   dropdowns.refresh();
 });
@@ -1819,7 +1820,7 @@ function downloadText(value, name) {
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 function downloadOriginal() {
-  const raw = readStoredBackup();
+  const raw = storageReadOnly ? readStoredBackup() : readProtectedBackup() || readStoredBackup();
   if (raw !== null)
     downloadText(raw, `typaze-original-${new Date().toISOString().slice(0, 10)}.json`);
 }

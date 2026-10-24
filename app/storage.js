@@ -1,5 +1,6 @@
 import { emptyProgress, isProgress, reconcileProgress } from './progress-state.js';
 const KEY = 'typaze.v1';
+const RECOVERY_KEY = 'typaze.recovery.v1';
 export const isValidResult = (r) =>
   r &&
   typeof r.id === 'string' &&
@@ -23,8 +24,23 @@ export function readStoredBackup() {
     return null;
   }
 }
+export function readProtectedBackup() {
+  try {
+    return localStorage.getItem(RECOVERY_KEY) || null;
+  } catch {
+    return null;
+  }
+}
 export function commitImport(history, settings, progress, { readOnly = false } = {}) {
   if (!isProgress(progress)) return false;
+  if (readOnly) {
+    try {
+      const original = localStorage.getItem(KEY);
+      if (original !== null) localStorage.setItem(RECOVERY_KEY, original);
+    } catch {
+      return false;
+    }
+  }
   return persist(history, settings, { progress, force: readOnly, readOnly });
 }
 export function load() {
