@@ -3176,3 +3176,179 @@ body .app-footer {
   text-align: right;
 }
 
+.progress-trend {
+  min-width: 0;
+}
+
+.progress-trend > .progress-choices {
+  margin: 0 0 16px 48px;
+}
+
+.progress-record {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 12px;
+}
+
+.progress-record > span:last-child {
+  color: var(--muted);
+}
+
+.progress-tests .progress-test-body.has-curve {
+  grid-template-columns: minmax(240px, 0.85fr) minmax(0, 1.4fr);
+}
+
+@media (max-width: 900px) {
+  .progress-tests .progress-test-body.has-curve {
+    display: block;
+  }
+
+  .progress-trend {
+    margin-top: 28px;
+  }
+}
+
+@media (max-width: 600px) {
+  .lesson-summary {
+    gap: 20px 40px;
+  }
+
+  .lesson-summary > div:first-child dd {
+    font-size: 42px;
+  }
+
+  .lesson-summary dd {
+    font-size: 32px;
+  }
+
+  .finger-map {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .readable-chart figcaption {
+    font-size: 12px;
+  }
+}
+
+.has-result-summary .comparison {
+  margin-top: 28px;
+  padding-top: 0;
+  border: 0;
+}
+
+.has-result-summary .comparison h2 {
+  font:
+    400 16px/1.5 system-ui,
+    sans-serif;
+  margin: 0;
+}
+
+.comparison-status h2 {
+  color: var(--muted);
+}
+
+.comparison-pair {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  max-width: 420px;
+  gap: 24px 48px;
+  margin-top: 16px;
+}
+
+.comparison-pair > div {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.comparison-pair dt {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.comparison-pair dd {
+  font: 400 28px/1.4 var(--mono);
+  letter-spacing: -0.025em;
+}
+
+.comparison-pair > div > span {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.comparison-focus.is-improved .comparison-pair > div:last-child dd {
+  color: var(--mint);
+}
+
+.analysis-more {
+  margin-top: 12px;
+}
+
+.analysis-more > summary {
+  display: flex;
+  gap: 12px;
+  align-items: baseline;
+  width: fit-content;
+  min-height: 44px;
+  padding-block: 10px;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 14px;
+  list-style: none;
+}
+
+.analysis-more > summary::-webkit-details-marker {
+  display: none;
+}
+
+.analysis-more > summary span {
+  font: 13px var(--mono);
+}
+
+.analysis-more[open] > summary {
+  color: var(--text);
+}
+
+.analysis-more > .analysis-group-list {
+  margin-top: 8px;
+}
+
+.restore-summary {
+  margin-block: 24px;
+}
+
+.restore-summary > div {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 24px;
+  margin-block: 12px;
+}
+
+.restore-summary dt {
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.restore-summary dd {
+  font: 400 18px/1.5 var(--mono);
+  text-align: right;
+}
+
+#settings-dialog .backup-status,
+#restore-dialog .backup-status {
+  color: var(--muted);
+  font-size: 14px;
+  margin: 16px 0;
+}
+
+#settings-dialog button:disabled {
+  color: var(--quiet);
+  text-decoration: none;
+}
+
+#settings-dialog .backup-status.is-error,
+#restore-dialog .backup-status {
+  color: var(--error);
+}
