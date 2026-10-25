@@ -1,6 +1,33 @@
 import { emptyProgress, isProgress, reconcileProgress } from './progress-state.js';
 const KEY = 'typaze.v1';
 const RECOVERY_KEY = 'typaze.recovery.v1';
+const stringList = (value) =>
+  Array.isArray(value) && value.every((item) => typeof item === 'string');
+const optionalStrings = (row, key) => row[key] === undefined || stringList(row[key]);
+const validMetadata = (r) =>
+  optionalStrings(r, 'practiceSeen') &&
+  (r.wrongKeys === undefined ||
+    (Array.isArray(r.wrongKeys) &&
+      r.wrongKeys.every(
+        (row) =>
+          row &&
+          typeof row.expected === 'string' &&
+          typeof row.actual === 'string' &&
+          Number.isSafeInteger(row.count) &&
+          row.count > 0,
+      ))) &&
+  ((r.lessonUnit == null && r.lessonUnitCount == null) ||
+    (Number.isSafeInteger(r.lessonUnit) &&
+      r.lessonUnit >= 0 &&
+      Number.isSafeInteger(r.lessonUnitCount) &&
+      r.lessonUnitCount > r.lessonUnit)) &&
+  r.groups.every(
+    (row) =>
+      row &&
+      typeof row === 'object' &&
+      optionalStrings(row, 'sources') &&
+      optionalStrings(row, 'errorSources'),
+  );
 export const isValidResult = (r) =>
   r &&
   typeof r.id === 'string' &&
@@ -16,7 +43,8 @@ export const isValidResult = (r) =>
   Array.isArray(r.groups) &&
   Array.isArray(r.errors) &&
   Array.isArray(r.bins) &&
-  Array.isArray(r.seen);
+  Array.isArray(r.seen) &&
+  validMetadata(r);
 export function readStoredBackup() {
   try {
     return localStorage.getItem(KEY) || null;
